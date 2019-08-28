@@ -7,6 +7,9 @@
 .PHONY: test
 ## runs the tests without coverage and excluding E2E tests
 test:
+	@-echo "printing out"
+	@-git config --get remote.origin.url
+	@-git branch
 	@echo "running the tests without coverage and excluding E2E tests..."
 	$(Q)go test ${V_FLAG} -race $(shell go list ./... | grep -v /test/e2e) -failfast
 
@@ -23,6 +26,11 @@ COV_DIR = $(OUT_DIR)/coverage
 .PHONY: test-with-coverage
 ## runs the tests with coverage
 test-with-coverage:
+	@-echo "printing out"
+	@-git config --get remote.origin.url
+	@-cat .git/config
+	@-git branch
+	@-printenv
 	@echo "running the tests with coverage..."
 	@-mkdir -p $(COV_DIR)
 	@-rm $(COV_DIR)/coverage.txt
@@ -76,8 +84,9 @@ HOST_NS := host-operator-$(shell date +'%s')
 
 .PHONY: test-e2e
 test-e2e:
-	git config --get remote.origin.url
-	git branch
+	@-echo "printing out"
+	@-git config --get remote.origin.url
+	@-git branch
 
 
 .PHONY: print-logs
