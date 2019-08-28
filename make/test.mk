@@ -73,18 +73,12 @@ HOST_NS := host-operator-$(shell date +'%s')
 #
 ###########################################################
 
-.PHONY: test-e2e-keep-namespaces
-test-e2e-keep-namespaces: deploy-member e2e-setup setup-kubefed e2e-run
 
 .PHONY: test-e2e
-test-e2e: test-e2e-keep-namespaces e2e-cleanup
+test-e2e:
+	git config --get remote.origin.url
+	git branch
 
-.PHONY: e2e-run
-e2e-run:
-	oc get kubefedcluster -n $(HOST_NS)
-	oc get kubefedcluster -n $(MEMBER_NS)
-	MEMBER_NS=${MEMBER_NS} operator-sdk test local ./test/e2e --no-setup --namespace $(HOST_NS) --verbose --go-test-flags "-timeout=15m" || \
-	($(MAKE) print-logs HOST_NS=${HOST_NS} MEMBER_NS=${MEMBER_NS} && exit 1)
 
 .PHONY: print-logs
 print-logs:
