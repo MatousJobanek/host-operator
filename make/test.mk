@@ -80,6 +80,7 @@ HOST_NS := host-operator-$(shell date +'%s')
 
 .PHONY: test-e2e
 test-e2e:
+	printenv
 ifeq ($(E2E_REPO_PATH),)
 	$(eval E2E_REPO_PATH = /tmp/toolchain-e2e)
 	rm -rf ${E2E_REPO_PATH}
@@ -87,11 +88,12 @@ ifeq ($(E2E_REPO_PATH),)
 	git clone https://github.com/codeready-toolchain/toolchain-e2e.git --depth 1 ${E2E_REPO_PATH}
 endif
 	@-echo "printing out"
+	echo ${PULL_PULL_SHA}
+	echo $${PULL_PULL_SHA}
 	curl ${AUTHOR_LINK}/host-operator.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a ${PULL_PULL_SHA} | awk '{print $$2}'
 	$(eval BRANCH_REF := $(shell curl ${AUTHOR_LINK}/host-operator.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a $${PULL_PULL_SHA} | awk '{print $$2}'))
 	echo ${BRANCH_REF}
 	$(eval EXISTS := $(shell curl ${AUTHOR_LINK}/toolchain-e2e.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a ${BRANCH_REF} | awk '{print $$2}'))
-
 	$(eval BRANCH_NAME := $(shell echo ${BRANCH_REF} | awk -F'/' '{print $$3}'))
 	echo ${BRANCH_REF} | awk -F'/' '{print $3}'
 	echo name ${BRANCH_NAME}
