@@ -13,6 +13,7 @@ test:
 	@echo "running the tests without coverage and excluding E2E tests..."
 	$(Q)go test ${V_FLAG} -race $(shell go list ./... | grep -v /test/e2e) -failfast
 
+AUTHOR_LINK := $(shell jq -r '.refs[0].pulls[0].author_link' <<< $${CLONEREFS_OPTIONS} | tr -d '[:space:]')
 
 ############################################################
 #
@@ -26,11 +27,6 @@ COV_DIR = $(OUT_DIR)/coverage
 .PHONY: test-with-coverage
 ## runs the tests with coverage
 test-with-coverage:
-	@-echo "printing out"
-	@-git config --get remote.origin.url
-	@-cat .git/config
-	@-git branch
-	@-printenv
 	@echo "running the tests with coverage..."
 	@-mkdir -p $(COV_DIR)
 	@-rm $(COV_DIR)/coverage.txt
@@ -84,9 +80,27 @@ HOST_NS := host-operator-$(shell date +'%s')
 
 .PHONY: test-e2e
 test-e2e:
+ifeq ($(E2E_REPO_PATH),)
+	$(eval E2E_REPO_PATH = /tmp/toolchain-e2e)
+	rm -rf ${E2E_REPO_PATH}
+	# cloning here as don't want to maintain it for every single change in deploy directory of member-operator
+	git clone https://github.com/codeready-toolchain/toolchain-e2e.git --depth 1 ${E2E_REPO_PATH}
+endif
 	@-echo "printing out"
-	@-git config --get remote.origin.url
-	@-git branch
+	curl ${AUTHOR_LINK}/host-operator.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a ${PULL_PULL_SHA} | awk '{print $$2}'
+	$(eval BRANCH_REF := $(shell curl ${AUTHOR_LINK}/host-operator.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a $${PULL_PULL_SHA} | awk '{print $$2}'))
+	echo ${BRANCH_REF}
+	$(eval EXISTS := $(shell curl ${AUTHOR_LINK}/toolchain-e2e.git/info/refs?service=git-upload-pack --output - /dev/null 2>&1 | grep -a ${BRANCH_REF} | awk '{print $$2}'))
+
+	$(eval BRANCH_NAME := $(shell echo ${BRANCH_REF} | awk -F'/' '{print $$3}'))
+	echo ${BRANCH_REF} | awk -F'/' '{print $3}'
+	echo name ${BRANCH_NAME}
+	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} remote add external ${AUTHOR_LINK}/toolchain-e2e.git
+	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} fetch external ${BRANCH_REF}
+	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} branch
+	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} merge external/${BRANCH_NAME}
+	$(MAKE) -C ${E2E_REPO_PATH} test-e2e TMP_HOST_PATH=${PWD}
+
 
 
 .PHONY: print-logs
