@@ -96,8 +96,7 @@ endif
 	echo name ${BRANCH_NAME}
 	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} remote add external ${AUTHOR_LINK}/toolchain-e2e.git
 	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} fetch external ${BRANCH_REF}
-	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} branch
-	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} merge external/${BRANCH_NAME}
+	git --git-dir=${E2E_REPO_PATH}/.git --work-tree=${E2E_REPO_PATH} merge FETCH_HEAD
 	$(MAKE) -C ${E2E_REPO_PATH} test-e2e TMP_HOST_PATH=${PWD}
 
 
