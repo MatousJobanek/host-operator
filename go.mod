@@ -5,6 +5,7 @@ require (
 	github.com/appscode/jsonpatch v0.0.0-20190625103638-320dcdd0e1f7 // indirect
 	github.com/codeready-toolchain/api v0.0.0-20190906003527-443e8ceac134
 	github.com/codeready-toolchain/toolchain-common v0.0.0-20190904115454-79e74322be0a
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.2 // indirect
@@ -31,6 +32,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20190620073856-dcce3486da33
+	k8s.io/apiextensions-apiserver v0.0.0-20190620075237-c8f64ade8733
 	k8s.io/apimachinery v0.0.0-20190620073744-d16981aedf33
 	k8s.io/apiserver v0.0.0-20190111033246-d50e9ac5404f // indirect
 	k8s.io/client-go v11.0.0+incompatible
