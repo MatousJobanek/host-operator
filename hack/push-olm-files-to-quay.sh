@@ -66,20 +66,7 @@ operator-courier flatten "${PKG_DIR}" ${TMP_FLATTEN_DIR}
 
 NEW_VERSION="0.0.$(git rev-list --all --count)-${GIT_COMMIT_ID}"
 echo "   - Push flattened files to Quay.io namespace '${QUAY_NAMESPACE}' as version ${NEW_VERSION}"
-case ${platform} in
-"kubernetes")
-QUAY_USERNAME_PLATFORM_VAR="QUAY_USERNAME_K8S"
-QUAY_PASSWORD_PLATFORM_VAR="QUAY_PASSWORD_K8S"
-QUAY_USERNAME=${QUAY_USERNAME_K8S:-$QUAY_USERNAME}
-QUAY_PASSWORD=${QUAY_PASSWORD_K8S:-$QUAY_PASSWORD}
-;;
-"openshift")
-QUAY_USERNAME_PLATFORM_VAR="QUAY_USERNAME_OS"
-QUAY_PASSWORD_PLATFORM_VAR="QUAY_PASSWORD_OS"
-QUAY_USERNAME=${QUAY_USERNAME_OS:-$QUAY_USERNAME}
-QUAY_PASSWORD=${QUAY_PASSWORD_OS:-$QUAY_PASSWORD}
-;;
-esac
+
 if [ -z "${QUAY_USERNAME}" ] || [ -z "${QUAY_PASSWORD}" ]
 then
 echo "#### ERROR: "
@@ -96,6 +83,6 @@ AUTH_TOKEN=$(curl -sH "Content-Type: application/json" -XPOST https://quay.io/cn
 }
 }' | jq -r '.token')
 
-operator-courier push generated/flatten "${quayNamespace}" "${packageName}" "${applicationVersion}" "${AUTH_TOKEN}"
+operator-courier push ${TMP_FLATTEN_DIR} "${QUAY_NAMESPACE}" "${PRJ_NAME}" "${NEW_VERSION}" "${AUTH_TOKEN}"
 
 cd "${CURRENT_DIR}"
