@@ -12,6 +12,8 @@ build: generate $(OUT_DIR)/operator
 
 $(OUT_DIR)/operator:
 	git rev-list --count HEAD
+	ls /etc
+	ls /etc/sentry-dsn
 	@echo "building host-operator in ${GO_PACKAGE_PATH}"
 	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
 		go build ${V_FLAG} \
