@@ -1,4 +1,4 @@
-package config
+package configuration
 
 const (
 	ToolchainConfigMapName = "toolchain-saas-config"

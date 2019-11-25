@@ -1,12 +1,14 @@
 module github.com/codeready-toolchain/host-operator
 
 require (
-	cloud.google.com/go v0.46.3 // indirect
-	github.com/Azure/go-autorest/autorest/adal v0.6.0 // indirect
+	github.com/Azure/go-autorest/autorest v0.9.2 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.8.0 // indirect
 	github.com/codeready-toolchain/api v0.0.0-20191129104300-b4af5bf7d40a
+	github.com/codeready-toolchain/registration-service v0.0.0-20191126104044-c7ab324e06ab
 	github.com/codeready-toolchain/toolchain-common v0.0.0-20191121080604-19eb69496fd9
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-logr/logr v0.1.0
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gophercloud/gophercloud v0.3.0 // indirect
 	github.com/openshift/api v3.9.1-0.20190730142803-0922aa5a655b+incompatible
 	github.com/operator-framework/operator-sdk v0.11.0
@@ -14,17 +16,23 @@ require (
 	github.com/redhat-cop/operator-utils v0.0.0-20190827162636-51e6b0c32776
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	gopkg.in/h2non/gock.v1 v1.0.14
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.4
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/klog v1.0.0
+	k8s.io/kubernetes v1.14.2
 	sigs.k8s.io/controller-runtime v0.3.0
 	sigs.k8s.io/kubefed v0.1.0-rc6.0.20191023070212-24d45e9f4f15
 	sigs.k8s.io/testing_frameworks v0.1.2 // indirect
 )
+
+replace github.com/codeready-toolchain/api => ../api
+
+replace github.com/codeready-toolchain/toolchain-common => ../toolchain-common
 
 // Pinned to kubernetes-1.14.1
 replace (
