@@ -8,10 +8,10 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	crtCfg "github.com/codeready-toolchain/host-operator/pkg/configuration"
+	"github.com/codeready-toolchain/host-operator/pkg/metrics"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
 	"github.com/go-logr/logr"
-	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +55,10 @@ type Reconciler struct {
 	Config *crtCfg.Config
 }
 
+//+kubebuilder:rbac:groups=toolchain.dev.openshift.com,resources=masteruserrecords,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=toolchain.dev.openshift.com,resources=masteruserrecords/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=toolchain.dev.openshift.com,resources=masteruserrecords/finalizers,verbs=update
+
 // Reconcile reads that state of the cluster for a UserSignup object and makes changes based on the state read
 // and what is in the UserSignup.Spec
 // Note:
@@ -79,7 +83,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	reqLogger = reqLogger.WithValues("username", instance.Spec.Username)
 
-	if states.VerificationRequired(instance) && !states.Approved(instance) {
+	// Check if the UserSignup is waiting for phone verification to be finished
+	// Check also if the status doesn't contain the approved condition set to true - it there is, then it means that it's reactivated UserSignup and we should skip it here
+	if states.VerificationRequired(instance) && !condition.IsTrue(instance.Status.Conditions, toolchainv1alpha1.UserSignupApproved) {
 
 		createdTime := instance.ObjectMeta.CreationTimestamp
 
@@ -101,12 +107,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}, nil
 	}
 
-	if states.Deactivated(instance) {
+	// Check if the UserSignup is:
+	// * either deactivated
+	// * or if it is waiting for phone verification to be finished and at the same time the status contains the approved condition set to true
+	//   (in other words the UserSignup is reactivated but the phone verification hasn't been finished)
+	if states.Deactivated(instance) || (states.VerificationRequired(instance) && condition.IsTrue(instance.Status.Conditions, toolchainv1alpha1.UserSignupApproved)) {
 		// Find the UserSignupComplete condition
 		cond, found := condition.FindConditionByType(instance.Status.Conditions, toolchainv1alpha1.UserSignupComplete)
-
-		if !found || cond.Status != apiv1.ConditionTrue || cond.Reason != toolchainv1alpha1.UserSignupUserDeactivatedReason {
-			// We cannot find the status condition with "deactivated" reason, simply return
+		if !found {
+			// We cannot find the status Complete condition
 			return reconcile.Result{}, nil
 		}
 
@@ -136,6 +145,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 // DeleteUserSignup deletes the specified UserSignup
 func (r *Reconciler) DeleteUserSignup(userSignup *toolchainv1alpha1.UserSignup, logger logr.Logger) error {
+	// before deleting the resource, we want to "remember" if the user triggered a phone verification or not,
+	// based on the presence of the `toolchain.dev.openshift.com/verification-code` annotation
+	_, phoneVerificationTriggered := userSignup.Annotations[toolchainv1alpha1.UserSignupVerificationCodeAnnotationKey]
+
 	propagationPolicy := metav1.DeletePropagationForeground
 	err := r.Client.Delete(context.TODO(), userSignup, &client.DeleteOptions{
 		PropagationPolicy: &propagationPolicy,
@@ -143,6 +156,13 @@ func (r *Reconciler) DeleteUserSignup(userSignup *toolchainv1alpha1.UserSignup, 
 	if err != nil {
 		return err
 	}
-	logger.Info("Deleted UserSignup", "Name", userSignup.Name)
+	logger.Info("Deleted UserSignup", "name", userSignup.Name)
+	// increment the appropriate counter, based whether the phone verification was triggered or not
+	if phoneVerificationTriggered {
+		metrics.UserSignupDeletedWithInitiatingVerificationTotal.Inc()
+	} else {
+		metrics.UserSignupDeletedWithoutInitiatingVerificationTotal.Inc()
+	}
+	logger.Info("incremented counter", "name", userSignup.Name, "phone verification triggered", phoneVerificationTriggered)
 	return nil
 }
