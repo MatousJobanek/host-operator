@@ -381,7 +381,7 @@ func (r *Reconciler) checkIfMurAlreadyExists(
 
 		logger.Info("Setting UserSignup status to 'Complete'")
 
-		return true, r.updateStatus(ctx, userSignup, r.updateCompleteStatus(mur.Name))
+		return true, r.updateStatus(ctx, userSignup, r.updateCompleteStatus(mur))
 	}
 
 	return false, nil

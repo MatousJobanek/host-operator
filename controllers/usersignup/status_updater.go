@@ -2,12 +2,16 @@ package usersignup
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/host-operator/controllers/toolchainconfig"
 	commonCondition "github.com/codeready-toolchain/toolchain-common/pkg/condition"
-
 	errs "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -20,6 +24,7 @@ func (u *StatusUpdater) setStatusApprovedAutomatically(ctx context.Context, user
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupApproved,
 			Status:  corev1.ConditionTrue,
@@ -58,6 +63,7 @@ func (u *StatusUpdater) setStatusInvalidMURState(ctx context.Context, userSignup
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -70,6 +76,7 @@ func (u *StatusUpdater) setStatusFailedToCreateMUR(ctx context.Context, userSign
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -82,6 +89,7 @@ func (u *StatusUpdater) setStatusFailedToDeleteMUR(ctx context.Context, userSign
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -94,6 +102,7 @@ func (u *StatusUpdater) setStatusFailedToCreateSpace(ctx context.Context, userSi
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -106,6 +115,7 @@ func (u *StatusUpdater) setStatusFailedToCreateSpaceBinding(ctx context.Context,
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -120,7 +130,7 @@ func (u *StatusUpdater) set(conditionCreators ...func(message string) toolchainv
 		for index, createCondition := range conditionCreators {
 			conditions[index] = createCondition(message)
 		}
-		return u.updateStatusConditions(ctx, userSignup, conditions...)
+		return u.updateStatusConditions(ctx, userSignup, userSignup.Status.ScheduledDeactivationTimestamp, conditions...)
 	}
 }
 
@@ -137,6 +147,7 @@ func (u *StatusUpdater) setStatusNoUserTierAvailable(ctx context.Context, userSi
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -149,6 +160,7 @@ func (u *StatusUpdater) setStatusNoTemplateTierAvailable(ctx context.Context, us
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -161,6 +173,7 @@ func (u *StatusUpdater) setStatusBanning(ctx context.Context, userSignup *toolch
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -174,6 +187,7 @@ func (u *StatusUpdater) setStatusBanned(ctx context.Context, userSignup *toolcha
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionTrue,
@@ -186,6 +200,7 @@ func (u *StatusUpdater) setStatusDeactivationInProgress(ctx context.Context, use
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -198,6 +213,7 @@ func (u *StatusUpdater) setStatusDeactivated(ctx context.Context, userSignup *to
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionTrue,
@@ -216,6 +232,7 @@ func (u *StatusUpdater) setStatusFailedToReadBannedUsers(ctx context.Context, us
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -228,6 +245,7 @@ func (u *StatusUpdater) setStatusInvalidMissingUserEmail(ctx context.Context, us
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -240,6 +258,7 @@ func (u *StatusUpdater) setStatusMissingEmailHash(ctx context.Context, userSignu
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -252,6 +271,7 @@ func (u *StatusUpdater) setStatusInvalidEmailHash(ctx context.Context, userSignu
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -264,6 +284,7 @@ func (u *StatusUpdater) setStatusVerificationRequired(ctx context.Context, userS
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -276,6 +297,7 @@ func (u *StatusUpdater) setStatusFailedToUpdateStateLabel(ctx context.Context, u
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -288,6 +310,7 @@ func (u *StatusUpdater) setStatusFailedToUpdateAnnotation(ctx context.Context, u
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -300,6 +323,7 @@ func (u *StatusUpdater) setStatusDeactivationNotificationCreated(ctx context.Con
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:   toolchainv1alpha1.UserSignupUserDeactivatedNotificationCreated,
 			Status: corev1.ConditionTrue,
@@ -311,6 +335,7 @@ func (u *StatusUpdater) setStatusDeactivationNotificationUserIsActive(ctx contex
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:   toolchainv1alpha1.UserSignupUserDeactivatedNotificationCreated,
 			Status: corev1.ConditionFalse,
@@ -322,6 +347,7 @@ func (u *StatusUpdater) setStatusDeactivationNotificationCreationFailed(ctx cont
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupUserDeactivatedNotificationCreated,
 			Status:  corev1.ConditionFalse,
@@ -331,20 +357,50 @@ func (u *StatusUpdater) setStatusDeactivationNotificationCreationFailed(ctx cont
 }
 
 func (u *StatusUpdater) setStatusDeactivatingNotificationCreated(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, _ string) error {
-	return u.updateStatusConditions(
-		ctx,
-		userSignup,
-		toolchainv1alpha1.Condition{
-			Type:   toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
-			Status: corev1.ConditionTrue,
-			Reason: toolchainv1alpha1.UserSignupDeactivatingNotificationCRCreatedReason,
-		})
+	var updated bool
+	userSignup.Status.Conditions, updated = commonCondition.AddOrUpdateStatusConditions(userSignup.Status.Conditions, toolchainv1alpha1.Condition{
+		Type:   toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+		Status: corev1.ConditionTrue,
+		Reason: toolchainv1alpha1.UserSignupDeactivatingNotificationCRCreatedReason,
+	})
+
+	deactivationTime, err := u.deactivatingDeactivationTime(userSignup)
+	if err != nil {
+		return err
+	}
+	if !updated && userSignup.Status.ScheduledDeactivationTimestamp.Equal(deactivationTime) {
+		// Nothing changed
+		return nil
+	}
+	return u.Client.Status().Update(ctx, userSignup)
+}
+
+func (u *StatusUpdater) deactivatingDeactivationTime(userSignup *toolchainv1alpha1.UserSignup) (*v1.Time, error) {
+	if commonCondition.IsTrueWithReason(userSignup.Status.Conditions,
+		toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+		toolchainv1alpha1.UserSignupDeactivatingNotificationCRCreatedReason) {
+		deactivatingCondition, found := commonCondition.FindConditionByType(userSignup.Status.Conditions,
+			toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated)
+		if !found {
+			return nil, fmt.Errorf("unexpected")
+		}
+
+		config, err := toolchainconfig.GetToolchainConfig(u.Client)
+		if err != nil {
+			return nil, errs.Wrapf(err, "unable to get ToolchainConfig")
+		}
+		deactivatingNotificationDays := config.Deactivation().DeactivatingNotificationDays()
+		ts := v1.NewTime(deactivatingCondition.LastTransitionTime.Add(time.Duration(deactivatingNotificationDays) * 24 * time.Hour))
+		return &ts, nil
+	}
+	return nil, nil
 }
 
 func (u *StatusUpdater) setStatusDeactivatingNotificationNotInPreDeactivation(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, _ string) error {
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:   toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
 			Status: corev1.ConditionFalse,
@@ -356,6 +412,7 @@ func (u *StatusUpdater) setStatusDeactivatingNotificationCreationFailed(ctx cont
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		userSignup.Status.ScheduledDeactivationTimestamp,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
 			Status:  corev1.ConditionFalse,
@@ -378,6 +435,7 @@ func (u *StatusUpdater) updateIncompleteStatus(ctx context.Context, userSignup *
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
+		nil,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupComplete,
 			Status:  corev1.ConditionFalse,
@@ -388,11 +446,35 @@ func (u *StatusUpdater) updateIncompleteStatus(ctx context.Context, userSignup *
 
 // updateCompleteStatus updates the `CompliantUsername` and `Conditions` in the status, should only be invoked on completion because
 // both completion and the compliant username require the master user record to be created.
-func (u *StatusUpdater) updateCompleteStatus(compliantUsername string) func(context.Context, *toolchainv1alpha1.UserSignup, string) error {
+func (u *StatusUpdater) updateCompleteStatus(mur *toolchainv1alpha1.MasterUserRecord) func(context.Context, *toolchainv1alpha1.UserSignup, string) error {
 	return func(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, message string) error {
 
-		usernameUpdated := userSignup.Status.CompliantUsername != compliantUsername
-		userSignup.Status.CompliantUsername = compliantUsername
+		if mur.Status.ProvisionedTime == nil {
+			return fmt.Errorf("provisioned time hasn't been set yet")
+		}
+
+		deactivationTime, err := u.deactivatingDeactivationTime(userSignup)
+		if err != nil {
+			return err
+		}
+		if deactivationTime == nil {
+			// Get the tier associated with the MasterUserRecord, we'll observe the deactivation timeout period from the tier spec
+			userTier := &toolchainv1alpha1.UserTier{}
+			if err := u.Client.Get(ctx, types.NamespacedName{Namespace: mur.Namespace, Name: mur.Spec.TierName}, userTier); err != nil {
+				return err
+			}
+			deactivationTimeoutDays := userTier.Spec.DeactivationTimeoutDays
+			if deactivationTimeoutDays == 0 {
+				deactivationTime = nil
+			} else {
+				deactivationTimeout := time.Duration(deactivationTimeoutDays*24) * time.Hour
+				ts := v1.NewTime(mur.Status.ProvisionedTime.Add(deactivationTimeout))
+				deactivationTime = &ts
+			}
+		}
+
+		usernameUpdated := userSignup.Status.CompliantUsername != mur.Name
+		userSignup.Status.CompliantUsername = mur.Name
 
 		var conditionUpdated bool
 		userSignup.Status.Conditions, conditionUpdated = commonCondition.AddOrUpdateStatusConditions(userSignup.Status.Conditions,
@@ -403,7 +485,10 @@ func (u *StatusUpdater) updateCompleteStatus(compliantUsername string) func(cont
 				Message: message,
 			})
 
-		if !usernameUpdated && !conditionUpdated {
+		deactivationTimeUpdated := !userSignup.Status.ScheduledDeactivationTimestamp.Equal(deactivationTime)
+		userSignup.Status.ScheduledDeactivationTimestamp = deactivationTime
+
+		if !usernameUpdated && !conditionUpdated && deactivationTimeUpdated {
 			// Nothing changed
 			return nil
 		}
@@ -431,10 +516,10 @@ func (u *StatusUpdater) wrapErrorWithStatusUpdate(
 	return errs.Wrapf(err, format, args...)
 }
 
-func (u *StatusUpdater) updateStatusConditions(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, newConditions ...toolchainv1alpha1.Condition) error {
+func (u *StatusUpdater) updateStatusConditions(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, scheduledDeactivationTime *v1.Time, newConditions ...toolchainv1alpha1.Condition) error {
 	var updated bool
 	userSignup.Status.Conditions, updated = commonCondition.AddOrUpdateStatusConditions(userSignup.Status.Conditions, newConditions...)
-	if !updated {
+	if !updated && userSignup.Status.ScheduledDeactivationTimestamp.Equal(scheduledDeactivationTime) {
 		// Nothing changed
 		return nil
 	}
