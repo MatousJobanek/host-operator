@@ -409,10 +409,16 @@ func (u *StatusUpdater) setStatusDeactivatingNotificationNotInPreDeactivation(ct
 }
 
 func (u *StatusUpdater) setStatusDeactivatingNotificationCreationFailed(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, message string) error {
+	config, err := toolchainconfig.GetToolchainConfig(u.Client)
+	if err != nil {
+		return errs.Wrapf(err, "unable to get ToolchainConfig")
+	}
+	deactivatingNotificationDays := config.Deactivation().DeactivatingNotificationDays()
+	ts := v1.NewTime(time.Now().Add(time.Duration(deactivatingNotificationDays) * 24 * time.Hour))
 	return u.updateStatusConditions(
 		ctx,
 		userSignup,
-		userSignup.Status.ScheduledDeactivationTimestamp,
+		&ts,
 		toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
 			Status:  corev1.ConditionFalse,
