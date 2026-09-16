@@ -133,8 +133,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	// Check if the UserSignup is:
-	// * either deactivated
-	if states.Deactivated(instance) {
+	// * either deactivated or no-provisioning
+	if states.Deactivated(instance) || states.NoProvisioning(instance) {
 		// Find the UserSignupComplete condition
 		cond, found := condition.FindConditionByType(instance.Status.Conditions, toolchainv1alpha1.UserSignupComplete)
 		if !found {

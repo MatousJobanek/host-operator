@@ -29,10 +29,6 @@ github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDk
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 h1:aBangftG7EVZoUb69Os8IaYg++6uMOdKK83QtkkvJik=
 github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2/go.mod h1:qwXFYgsP6T7XnJtbKlf1HP8AjxZZyzxMmc+Lq5GjlU4=
-github.com/codeready-toolchain/api v0.0.0-20260807111559-e29da2fc346c h1:0fyFQlMi89U2ML+BjwEI3CW4MRJMJjQL7+RjrypxRDQ=
-github.com/codeready-toolchain/api v0.0.0-20260807111559-e29da2fc346c/go.mod h1:jkXNLbwYNA3rjOHZ6z6m8BsCs467LmveCapPQFfQZNY=
-github.com/codeready-toolchain/toolchain-common v0.0.0-20260807125728-33faed3f17f9 h1:VKIQ1mvALQrHEt4aSlZlNcfXcGX2zCOcskiE2G97RVU=
-github.com/codeready-toolchain/toolchain-common v0.0.0-20260807125728-33faed3f17f9/go.mod h1:TXPJQ/4BLJUA+B2sRnEmxynLJy/HIzMo42xNMEDIilI=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -186,6 +182,10 @@ github.com/mailgun/mailgun-go/v4 v4.8.1 h1:1+MdKakJuXnW2JJDbyPdO1ngAANOyHyVPxQvF
 github.com/mailgun/mailgun-go/v4 v4.8.1/go.mod h1:FJlF9rI5cQT+mrwujtJjPMbIVy3Ebor9bKTVsJ0QU40=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
+github.com/matousjobanek/api v0.0.0-20260916071327-e3aa4e2b4efc h1:REJqjWji+cI406vvTu1CtvK5KAIsAHqFXktlW2AMzaE=
+github.com/matousjobanek/api v0.0.0-20260916071327-e3aa4e2b4efc/go.mod h1:jkXNLbwYNA3rjOHZ6z6m8BsCs467LmveCapPQFfQZNY=
+github.com/matousjobanek/toolchain-common v0.0.0-20260916072157-6bf8d95f8f41 h1:Q+9YmhTDYAZDJor1sgPaFD+/Ppb/tsD/wR9ydxfIWBg=
+github.com/matousjobanek/toolchain-common v0.0.0-20260916072157-6bf8d95f8f41/go.mod h1:S7Uq4sZYsZ2J2D+3UisBQaBWYV4DyNwxpWnvyD/e2nE=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
 github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=

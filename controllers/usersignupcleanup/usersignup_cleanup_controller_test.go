@@ -58,53 +58,68 @@ func TestUserCleanup(t *testing.T) {
 		require.NotNil(t, userSignup)
 	})
 
-	t.Run("test that user cleanup doesn't delete a recently deactivated UserSignup", func(t *testing.T) {
+	t.Run("test that user cleanup doesn't delete a recently deactivated or no-provisioning UserSignup", func(t *testing.T) {
+		for name, modifier := range map[string]commonsignup.Modifier{
+			"deactivated":     commonsignup.DeactivatedAgo(5 * time.Minute),
+			"no-provisioning": commonsignup.NoProvisioningAgo(5 * time.Minute),
+		} {
+			t.Run(name, func(t *testing.T) {
+				// given
+				userSignup := commonsignup.NewUserSignup(
+					commonsignup.ApprovedManuallyAgo(fiveYears),
+					commonsignup.WithStateLabel(toolchainv1alpha1.UserSignupStateLabelValueApproved),
+					modifier,
+					commonsignup.CreatedBefore(fiveYears),
+				)
 
-		userSignup := commonsignup.NewUserSignup(
-			commonsignup.ApprovedManuallyAgo(fiveYears),
-			commonsignup.WithStateLabel(toolchainv1alpha1.UserSignupStateLabelValueApproved),
-			commonsignup.DeactivatedAgo(5*time.Minute),
-			commonsignup.CreatedBefore(fiveYears),
-		)
+				r, req, _ := prepareReconcile(t, userSignup.Name, userSignup)
 
-		r, req, _ := prepareReconcile(t, userSignup.Name, userSignup)
+				// when
+				res, err := r.Reconcile(context.TODO(), req)
+				require.NoError(t, err)
 
-		res, err := r.Reconcile(context.TODO(), req)
-		require.NoError(t, err)
+				// then
+				key := test.NamespacedName(test.HostOperatorNs, userSignup.Name)
+				require.NoError(t, r.Client.Get(context.Background(), key, userSignup))
+				require.NotNil(t, userSignup)
 
-		// Confirm the UserSignup still exists
-		key := test.NamespacedName(test.HostOperatorNs, userSignup.Name)
-		require.NoError(t, r.Client.Get(context.Background(), key, userSignup))
-		require.NotNil(t, userSignup)
-
-		expectRequeue(t, res, 0)
+				expectRequeue(t, res, 0)
+			})
+		}
 	})
 
-	t.Run("test that an old, deactivated UserSignup is deleted", func(t *testing.T) {
+	t.Run("test that an old, deactivated or no-provisioning UserSignup is deleted", func(t *testing.T) {
+		for name, modifier := range map[string]commonsignup.Modifier{
+			"deactivated":     commonsignup.DeactivatedAgo(fiveYears),
+			"no-provisioning": commonsignup.NoProvisioningAgo(fiveYears),
+		} {
+			t.Run(name, func(t *testing.T) {
+				// given
+				userSignup := commonsignup.NewUserSignup(
+					commonsignup.WithStateLabel(toolchainv1alpha1.UserSignupStateLabelValueApproved),
+					commonsignup.ApprovedManuallyAgo(fiveYears),
+					modifier,
+					commonsignup.CreatedBefore(fiveYears),
+				)
 
-		userSignup := commonsignup.NewUserSignup(
-			commonsignup.WithStateLabel(toolchainv1alpha1.UserSignupStateLabelValueApproved),
-			commonsignup.ApprovedManuallyAgo(fiveYears),
-			commonsignup.DeactivatedAgo(fiveYears),
-			commonsignup.CreatedBefore(fiveYears),
-		)
+				r, req, _ := prepareReconcile(t, userSignup.Name, userSignup)
 
-		r, req, _ := prepareReconcile(t, userSignup.Name, userSignup)
+				// when
+				_, err := r.Reconcile(context.TODO(), req)
+				require.NoError(t, err)
 
-		_, err := r.Reconcile(context.TODO(), req)
-		require.NoError(t, err)
-
-		// Confirm the UserSignup has been deleted
-		key := test.NamespacedName(test.HostOperatorNs, userSignup.Name)
-		err = r.Client.Get(context.Background(), key, userSignup)
-		require.Error(t, err)
-		require.True(t, apierrors.IsNotFound(err))
-		statusErr := &apierrors.StatusError{}
-		require.ErrorAs(t, err, &statusErr)
-		require.Equal(t, fmt.Sprintf("usersignups.toolchain.dev.openshift.com \"%s\" not found", key.Name), statusErr.Error())
-		// and verify the metrics
-		metricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupDeletedWithInitiatingVerificationTotal)    // unchanged
-		metricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupDeletedWithoutInitiatingVerificationTotal) // unchanged
+				// then
+				key := test.NamespacedName(test.HostOperatorNs, userSignup.Name)
+				err = r.Client.Get(context.Background(), key, userSignup)
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err))
+				statusErr := &apierrors.StatusError{}
+				require.ErrorAs(t, err, &statusErr)
+				require.Equal(t, fmt.Sprintf("usersignups.toolchain.dev.openshift.com \"%s\" not found", key.Name), statusErr.Error())
+				metricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupDeletedWithInitiatingVerificationTotal)    // unchanged
+				metricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupDeletedWithoutInitiatingVerificationTotal) // unchanged
+			})
+		}
 	})
 
 	t.Run("test that an old, unverified UserSignup is deleted", func(t *testing.T) {
@@ -253,7 +268,7 @@ func TestUserCleanup(t *testing.T) {
 		assert.Empty(t, res.RequeueAfter)
 	})
 
-	t.Run("test old deactivated UserSignup cleanup", func(t *testing.T) {
+	t.Run("test old deactivated or no-provisioning UserSignup cleanup", func(t *testing.T) {
 		config := commonconfig.NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().Enabled(true),
 			testconfig.Deactivation().UserSignupDeactivatedRetentionDays(720))
 
@@ -270,6 +285,13 @@ func TestUserCleanup(t *testing.T) {
 				expectedError:       "",
 				expectedToBeDeleted: true,
 			},
+			"test that a no-provisioning UserSignup older than 2 years, with 1 activation and not banned, is deleted": {
+				userSignup: commonsignup.NewUserSignup(
+					commonsignup.NoProvisioningAgo(twoYears),
+					commonsignup.WithActivations("1")),
+				expectedError:       "",
+				expectedToBeDeleted: true,
+			},
 			"test that a UserSignup older than 2 years, with indeterminate activations and not banned, is deleted": {
 				userSignup: commonsignup.NewUserSignup(
 					commonsignup.DeactivatedAgo(twoYears),
@@ -280,6 +302,13 @@ func TestUserCleanup(t *testing.T) {
 			"test that a UserSignup 1 year old, with 1 activation and not banned, is not deleted": {
 				userSignup: commonsignup.NewUserSignup(
 					commonsignup.DeactivatedAgo(oneYear),
+					commonsignup.WithActivations("1")),
+				expectedError:       "",
+				expectedToBeDeleted: false,
+			},
+			"test that a no-provisioning UserSignup 1 year old, with 1 activation and not banned, is not deleted": {
+				userSignup: commonsignup.NewUserSignup(
+					commonsignup.NoProvisioningAgo(oneYear),
 					commonsignup.WithActivations("1")),
 				expectedError:       "",
 				expectedToBeDeleted: false,

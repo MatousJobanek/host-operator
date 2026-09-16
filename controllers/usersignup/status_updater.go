@@ -288,6 +288,24 @@ func (u *StatusUpdater) setStatusVerificationRequired(ctx context.Context, userS
 		})
 }
 
+func (u *StatusUpdater) setStatusNoProvisioning(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, message string) error {
+	return u.updateStatusConditions(
+		ctx,
+		userSignup,
+		toolchainv1alpha1.Condition{
+			Type:    toolchainv1alpha1.UserSignupComplete,
+			Status:  corev1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupInNoProvisioningStateReason,
+			Message: message,
+		},
+		toolchainv1alpha1.Condition{
+			Type:    toolchainv1alpha1.UserSignupApproved,
+			Status:  corev1.ConditionFalse,
+			Reason:  toolchainv1alpha1.UserSignupInNoProvisioningStateReason,
+			Message: message,
+		})
+}
+
 func (u *StatusUpdater) setStatusFailedToUpdateStateLabel(ctx context.Context, userSignup *toolchainv1alpha1.UserSignup, message string) error {
 	return u.updateStatusConditions(
 		ctx,

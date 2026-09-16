@@ -453,6 +453,13 @@ func (r *Reconciler) ensureNewMurIfApproved(
 		return err
 	}
 
+	if states.NoProvisioning(userSignup) {
+		if err := r.setStateLabel(ctx, config, userSignup, toolchainv1alpha1.UserSignupStateLabelValueNoProvisioning); err != nil {
+			return err
+		}
+		return r.updateStatus(ctx, userSignup, r.setStatusNoProvisioning)
+	}
+
 	approved, targetCluster, err := getClusterIfApproved(ctx, r.Client, userSignup, r.ClusterManager)
 	logger.Info("ensuring MUR", "approved", approved, "target_cluster", targetCluster, "error", err)
 	// if error was returned or no available cluster found

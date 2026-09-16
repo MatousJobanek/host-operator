@@ -3130,6 +3130,68 @@ func TestUserSignupBannedWithoutMURAndSpace(t *testing.T) {
 		})
 }
 
+func TestUserSignupNoProvisioning(t *testing.T) {
+	// given
+	userSignup := commonsignup.NewUserSignup(commonsignup.NoProvisioning())
+
+	config := commonconfig.NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().Enabled(true))
+	initObjs := []runtimeclient.Object{
+		userSignup,
+		baseNSTemplateTier,
+		deactivate30Tier,
+		commonsignup.NewUserSignup(commonsignup.WithName("jack"), commonsignup.WithActivations("1"), commonsignup.WithEmail("jack@example.com")),
+	}
+	r, req, _ := prepareReconcile(t, userSignup.Name, config, initObjs...)
+
+	// when
+	_, err := r.Reconcile(context.TODO(), req)
+
+	// then
+	require.NoError(t, err)
+	err = r.Client.Get(context.TODO(), commontest.NamespacedName(commontest.HostOperatorNs, userSignup.Name), userSignup)
+	require.NoError(t, err)
+	assert.Equal(t, toolchainv1alpha1.UserSignupStateLabelValueNoProvisioning, userSignup.Labels[toolchainv1alpha1.UserSignupStateLabelKey])
+	commonmetricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupBannedTotal)
+	commonmetricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupDeactivatedTotal)
+	commonmetricstest.AssertMetricsCounterEquals(t, 0, metrics.UserSignupApprovedTotal)
+	commonmetricstest.AssertMetricsCounterEquals(t, 1, metrics.UserSignupUniqueTotal)
+
+	// Confirm the status is set to InNotProvisioningState
+	commontest.AssertConditionsMatch(t, userSignup.Status.Conditions,
+		toolchainv1alpha1.Condition{
+			Type:   toolchainv1alpha1.UserSignupComplete,
+			Status: corev1.ConditionTrue,
+			Reason: toolchainv1alpha1.UserSignupInNoProvisioningStateReason,
+		},
+		toolchainv1alpha1.Condition{
+			Type:   toolchainv1alpha1.UserSignupApproved,
+			Status: corev1.ConditionFalse,
+			Reason: toolchainv1alpha1.UserSignupInNoProvisioningStateReason,
+		},
+		toolchainv1alpha1.Condition{
+			Type:   toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status: corev1.ConditionFalse,
+			Reason: "UserNotInPreDeactivation",
+		},
+		toolchainv1alpha1.Condition{
+			Type:   toolchainv1alpha1.UserSignupUserDeactivatedNotificationCreated,
+			Status: corev1.ConditionFalse,
+			Reason: "UserIsActive",
+		})
+
+	// Confirm that no MUR is created
+	murtest.AssertThatMasterUserRecords(t, r.Client).HaveCount(0)
+	spacetest.AssertThatSpaces(t, r.Client).HaveCount(0)
+	spacebindingtest.AssertThatSpaceBindings(t, r.Client).HaveCount(0)
+	metricstest.AssertThatCountersAndMetrics(t).
+		HaveMasterUserRecordsPerDomain(map[string]int{
+			string(metrics.External): 0,
+		}).
+		HaveUsersPerActivationsAndDomain(map[string]int{
+			"1,external": 1,
+		})
+}
+
 func TestUserSignupVerificationRequired(t *testing.T) {
 	// given
 	userSignup := commonsignup.NewUserSignup(commonsignup.VerificationRequired())
