@@ -6,8 +6,8 @@ toolchain go1.26.5
 
 require (
 	cloud.google.com/go/recaptchaenterprise/v2 v2.13.0
-	github.com/codeready-toolchain/api v0.0.0-20260807111559-e29da2fc346c
-	github.com/codeready-toolchain/toolchain-common v0.0.0-20260807125728-33faed3f17f9
+	github.com/codeready-toolchain/api v0.0.0-20260917102240-88cd1578ea41
+	github.com/codeready-toolchain/toolchain-common v0.0.0-20260917104434-e674386460b1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-logr/logr v1.4.3
 	github.com/gofrs/uuid v4.4.0+incompatible

@@ -26,12 +26,14 @@ var predicateLog = ctrl.Log.WithName("UserSignupChangedPredicate")
 // * annotation toolchain.dev.openshift.com/user-email has changed
 // * annotation toolchain.dev.openshift.com/migration-in-progress was removed
 // * label toolchain.dev.openshift.com/email-hash has changed
+// * label toolchain.dev.openshift.com/state has changed
 func (p UserSignupChangedPredicate) Update(e runtimeevent.UpdateEvent) bool {
 	if !checkMetaObjects(changedLog, e) {
 		return false
 	}
 	return e.ObjectNew.GetGeneration() != e.ObjectOld.GetGeneration() ||
-		p.labelChanged(e, toolchainv1alpha1.UserSignupUserEmailHashLabelKey)
+		p.labelChanged(e, toolchainv1alpha1.UserSignupUserEmailHashLabelKey) ||
+		p.labelChanged(e, toolchainv1alpha1.UserSignupStateLabelKey)
 }
 
 func (p UserSignupChangedPredicate) labelChanged(e runtimeevent.UpdateEvent, labelName string) bool {
