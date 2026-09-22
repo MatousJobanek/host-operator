@@ -443,6 +443,7 @@ spec:
                       verifiedTimestampExpiryDays:
                         description: VerifiedTimestampExpiryDays controls for how
                           many days the verified timestamp at UserSignup stays valid
+                        minimum: 0
                         type: integer
                       workatoWebHookURL:
                         description: |-
